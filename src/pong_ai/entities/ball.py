@@ -2,7 +2,7 @@
 #                                   Libraries                                  #
 # ---------------------------------------------------------------------------- #
 import pygame
-from pygame.typing import ColorLike, Point # 
+from pygame.typing import ColorLike, Point
 
 # ---------------------------------------------------------------------------- #
 #                                     Ball                                     #
