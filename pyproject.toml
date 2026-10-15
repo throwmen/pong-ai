@@ -1,17 +1,35 @@
+# --------------------------------------------------------------------------- #
+#                                   Project                                   #
+# --------------------------------------------------------------------------- #
 [project]
 name = "pong-ai"
 version = "0.1.0"
-description = "Add your description here"
+description = "Pong game with an AI opponent, built with pygame-ce"
 readme = "README.md"
 authors = [
-    { name = "throwmen", email = "donjuanchus@gmail.com" }
+    { name = "throwmen", email = "donjuanchus@gmail.com" },
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "pygame-ce>=2.5.8",
+]
 
+# Command to run the game: uv run pong-ai
 [project.scripts]
-pong-ai = "pong_ai:main"
+pong-ai = "pong_ai.__main__:main"
 
+# --------------------------------------------------------------------------- #
+#                                    Build                                    #
+# --------------------------------------------------------------------------- #
 [build-system]
 requires = ["uv_build>=0.13.1,<0.14.0"]
 build-backend = "uv_build"
+
+# --------------------------------------------------------------------------- #
+#                                    Tools                                    #
+# --------------------------------------------------------------------------- #
+[tool.uv]
+link-mode = "copy"   # cache (C:) and project (D:) are on different drives
+
+[tool.ruff.format]
+quote-style = "double"
