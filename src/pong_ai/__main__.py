@@ -9,25 +9,81 @@ from .controllers.keyboard import KeyboardController
 # ---------------------------------------------------------------------------- #
 #                                   Constants                                  #
 # ---------------------------------------------------------------------------- #
-BASE_DISPLAY = (250, 350) # screen_width, screen_height
-LEFT_PADDLE_UP_KEYS = [pygame.K_w, pygame.K_UP]
-LEFT_PADDLE_DOWN_KEYS = [pygame.K_s, pygame.K_DOWN]
-RIGHT_PADDLE_UP_KEYS = [pygame.K_i, pygame.K_o]
+BASE_DISPLAY           = (250, 350) # screen_width, screen_height
+LEFT_PADDLE_UP_KEYS    = [pygame.K_w, pygame.K_UP]
+LEFT_PADDLE_DOWN_KEYS  = [pygame.K_s, pygame.K_DOWN]
+RIGHT_PADDLE_UP_KEYS   = [pygame.K_i, pygame.K_o]
 RIGHT_PADDLE_DOWN_KEYS = [pygame.K_k, pygame.K_l]
+MAX_SCORE              = 5
+SCORE_FONT_FAMILY      = None
+SCORE_FONT_SIZE        = 42
+SCORE_FONT_COLOR       = "white"
+CENTRAL_LINE_COLOR     = "gray30"
+CENTRAL_LINE_THICKNESS = 2
+
+# ---------------------------------------------------------------------------- #
+#                                 Aux. functions                                #
+# ---------------------------------------------------------------------------- #
+def check_colission(ball: Ball, left_paddle: Paddle, right_paddle: Paddle) -> None:
+    if(ball.rect.colliderect(left_paddle.rect)):
+        ball.velocity.x *= -1
+        ball.rect.left = left_paddle.rect.right
+
+    elif(ball.rect.colliderect(right_paddle.rect)):
+        ball.velocity.x *= -1
+        ball.rect.right = right_paddle.rect.left
+
+def check_score(
+        ball: Ball,
+        left_player_score: int,
+        right_player_score: int
+    ) -> tuple[int, int, bool]:
+    scored = False
+    
+    if ball.rect.right <= 0:
+        right_player_score += 1
+        scored = True
+    
+    elif ball.rect.left >= BASE_DISPLAY[0]:
+        left_player_score += 1
+        scored = True
+    
+    return left_player_score, right_player_score, scored
+
+def draw_score(
+        surface: pygame.Surface,
+        font: pygame.font.Font,
+        left_score: int,
+        right_score: int,
+        font_color: str = SCORE_FONT_COLOR
+    ) -> None:
+    center_x = surface.get_width() // 2
+
+    left_text  = font.render(str(left_score), True, font_color)
+    right_text = font.render(str(right_score), True, font_color)
+
+    left_rect  = left_text.get_rect(center = (center_x - 25, 25))
+    right_rect = right_text.get_rect(center = (center_x + 25, 25))
+
+    surface.blit(left_text, left_rect)
+    surface.blit(right_text, right_rect)
 
 # ---------------------------------------------------------------------------- #
 #                                 pygame setup                                 #
 # ---------------------------------------------------------------------------- #
 def main():
     pygame.init()
-    screen  = pygame.display.set_mode(BASE_DISPLAY)
-    clock   = pygame.time.Clock()
-    running = True
+    screen             = pygame.display.set_mode(BASE_DISPLAY)
+    clock              = pygame.time.Clock()
+    score_font         = pygame.font.Font(SCORE_FONT_FAMILY, SCORE_FONT_SIZE)
+    left_player_score  = 0
+    right_player_score = 0
+    running            = True
 
-    ball = Ball((BASE_DISPLAY[0] // 2, BASE_DISPLAY[1] // 2))
-    left_paddle = Paddle((10, BASE_DISPLAY[1] // 2))
-    right_paddle = Paddle((BASE_DISPLAY[0] - 10, BASE_DISPLAY[1] // 2))
-    left_paddle_controller = KeyboardController(LEFT_PADDLE_UP_KEYS, LEFT_PADDLE_DOWN_KEYS)
+    ball                    = Ball((BASE_DISPLAY[0] // 2, BASE_DISPLAY[1] // 2))
+    left_paddle             = Paddle((10, BASE_DISPLAY[1] // 2))
+    right_paddle            = Paddle((BASE_DISPLAY[0] - 10, BASE_DISPLAY[1] // 2))
+    left_paddle_controller  = KeyboardController(LEFT_PADDLE_UP_KEYS, LEFT_PADDLE_DOWN_KEYS)
     right_paddle_controller = KeyboardController(RIGHT_PADDLE_UP_KEYS, RIGHT_PADDLE_DOWN_KEYS)
 
     # ------------------------------ principal loop ------------------------------ #
@@ -47,19 +103,37 @@ def main():
         # Update the movement of the right_paddle
         right_paddle.update(BASE_DISPLAY[1], right_paddle_controller.decide())
 
-        # Check colission between the paddle and the ball
-        if(ball.rect.colliderect(left_paddle.rect)):
-            ball.velocity.x *= -1
-            ball.rect.left = left_paddle.rect.right
+        # Check colission between the paddles and the ball
+        check_colission(ball, left_paddle, right_paddle)
 
-        elif(ball.rect.colliderect(right_paddle.rect)):
-            ball.velocity.x *= -1
-            ball.rect.right = right_paddle.rect.left
+        # Check if any player has scored
+        left_player_score, right_player_score, scored = check_score(
+            ball,
+            left_player_score,
+            right_player_score
+        )
+
+        # Resets the ball and also checks if the game is over
+        if(scored):
+            ball.reset()
+
+            if max(left_player_score, right_player_score) == MAX_SCORE:
+                running = False
 
         # fill the screen with a color to wipe away anything from last frame
         screen.fill("black")
 
+        # Central line
+        pygame.draw.line(
+            screen,
+            CENTRAL_LINE_COLOR,
+            (BASE_DISPLAY[0] // 2, 0),
+            (BASE_DISPLAY[0] // 2, BASE_DISPLAY[1]),
+            CENTRAL_LINE_THICKNESS
+        )
+
         # Draw the objects
+        draw_score(screen, score_font, left_player_score, right_player_score)
         ball.draw(screen)
         left_paddle.draw(screen)
         right_paddle.draw(screen)
